@@ -57,6 +57,10 @@ def get_task_links(tasks, services, haproxy_service_id, haproxy_nets):
             for task_envvar in task_envvars:
                 if task_envvar["key"] == SERVICE_PORTS_ENVVAR_NAME:
                     service_ports = task_envvar["value"]
+                if task_envvar["key"] == "VIRTUAL_HOST":
+                    if "{{.Task.Slot}}" in task_envvar["value"]:
+                        task_envvar["value"] = task_envvar["value"].replace("{{.Task.Slot}}",task_slot)
+                        task_service_name = task_service_name + "." + task_slot
             task_ports = [x.strip() for x in service_ports.strip().split(",") if x.strip()]
 
             task_ips = []
