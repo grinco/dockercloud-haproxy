@@ -40,19 +40,19 @@ That's it - the haproxy container will start querying Docker Cloud's API for an 
 * add new links to HAProxy
 * remove old links from HAProxy
 
-##### example of stackfile in Docker Cloud:
+#### example of stackfile in Docker Cloud
 
-	web:
-	  image: 'dockercloud/hello-world:latest'
-	  target_num_containers: 2
-	lb:
-	  image: 'dockercloud/haproxy:latest'
-	  links:
-	    - web
-	  ports:
-	    - '80:80'
-	  roles:
-	    - global
+    web:
+      image: 'dockercloud/hello-world:latest'
+      target_num_containers: 2
+    lb:
+      image: 'dockercloud/haproxy:latest'
+      links:
+        - web
+      ports:
+        - '80:80'
+      roles:
+        - global
 
 ### Running with Docker SwarmMode (Swarm Mode)
 
@@ -70,8 +70,8 @@ Docker 1.12 supports SwarmMode natively. `dockercloud/haproxy` will auto config 
       If you mount `/var/run/docker.sock`, it can only be run on swarm manager nodes.
       If you want the haproxy service to run on worker nodes, you need to setup DOCKER_HOST envvar that points to the manager address.
 
-* If your application services need to access other services(database, for example), you can attach your application services to two different network, one is for database and the other one for the proxy
-* This feature is still experimental, please let us know if you find any bugs or have any suggestions.
+** If your application services need to access other services(database, for example), you can attach your application services to two different network, one is for database and the other one for the proxy
+** This feature is still experimental, please let us know if you find any bugs or have any suggestions.
 
 #### example of docker swarm mode support
 
@@ -93,26 +93,26 @@ Legacy link refers to the link created before docker 1.10, and the link created 
 
 #### example of docker-compose.yml v1 format:
 
-	web1:
-	  image: 'dockercloud/hello-world:latest'
-	web2:
-	  image: 'dockercloud/hello-world:latest'
-	lb:
-	  image: 'dockercloud/haproxy:latest'
-	  links:
-	    - web1
-	    - web2
-	  ports:
-	    - '80:80'
+    web1:
+      image: 'dockercloud/hello-world:latest'
+    web2:
+      image: 'dockercloud/hello-world:latest'
+    lb:
+      image: 'dockercloud/haproxy:latest'
+      links:
+        - web1
+        - web2
+      ports:
+        - '80:80'
 
 **Note**: Any link alias sharing the same prefix and followed by "-/_" with an integer is considered to be from the same service. For example: `web-1` and `web-2` belong to service `web`, `app_1` and `app_2` are from service `app`, but `app1` and `web2` are from different services.
-
 
 ### Running with Docker Compose v2 (Compose Mode)
 
 Docker Compose 1.6 supports a new format of the compose file. In the new version(v2), the old link that injects environment variables is deprecated.
 
 Similar to using legacy links, here list some differences that you need to notice:
+
 - This image must be run using Docker Compose, as it relies on the Docker Compose labels for configuration.
 - The container needs access to the docker socket, you must mount the correct files and set the related environment to make it work.
 - A link is required in order to ensure that dockercloud/haproxy is aware of which service it needs to balance, although links are not needed for service discovery since docker 1.10. Linked aliases are not required.
@@ -120,43 +120,44 @@ Similar to using legacy links, here list some differences that you need to notic
 - As it is the case on Docker Cloud, auto reconfiguration is supported when the linked services scales or/and the linked container starts/stops.
 - The container name is maintained by docker-compose, and used for service discovery as well. Please **DO NOT** change `container_name` of the linked service in the compose file to a non-standard name. Otherwise, that service will be ignored.
 
-##### example of docker-compose.yml running on Linux or Docker for Mac (beta):
+#### example of docker-compose.yml running on Linux or Docker for Mac (beta):
 
-	version: '2'
-	services:
-	  web:
-	    image: dockercloud/hello-world
-	  lb:
-	    image: dockercloud/haproxy
-	    links:
-	      - web
-	    volumes:
-	      - /var/run/docker.sock:/var/run/docker.sock
-	    ports:
-	      - 80:80
+    version: '2'
+    services:
+      web:
+        image: dockercloud/hello-world
+      lb:
+        image: dockercloud/haproxy
+        links:
+          - web
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+        ports:
+          - 80:80
 
 ##### example of docker-compose.yml running on Mac OS
 
-	version: '2'
-	services:
-	  web:
-	    image: dockercloud/hello-world
-	  lb:
-	    image: dockercloud/haproxy
-	    links:
-	      - web
-	    environment:
-	      - DOCKER_TLS_VERIFY
-	      - DOCKER_HOST
-	      - DOCKER_CERT_PATH
-	    volumes:
-	      - $DOCKER_CERT_PATH:$DOCKER_CERT_PATH
-	    ports:
-	      - 80:80
+    version: '2'
+    services:
+      web:
+        image: dockercloud/hello-world
+      lb:
+        image: dockercloud/haproxy
+        links:
+          - web
+        environment:
+          - DOCKER_TLS_VERIFY
+          - DOCKER_HOST
+          - DOCKER_CERT_PATH
+        volumes:
+          - $DOCKER_CERT_PATH:$DOCKER_CERT_PATH
+        ports:
+          - 80:80
 
 Once the stack is up, you can scale the web service using `docker-compose scale web=3`. dockercloud/haproxy will automatically reload its configuration.
 
 #### Running with Docker Compose v2 and Swarm (using envvar)
+
 When using links like previous section, the Docker Swarm scheduler can be too restrictive.
 Even with overlay network, swarm (As of 1.1.0) will attempt to schedule haproxy on the same node as the linked service due to legacy links behavior.
 This can cause unwanted scheduling patterns or errors such as "Unable to find a node fulfilling all dependencies..."
@@ -173,23 +174,23 @@ A second option is to use the `ADDITIONAL_SERVICES` variable for indentification
 
 ##### example of docker-compose.yml in 'project_dir' directory running in linux:
 
-	version: '2'
-	services:
-	  web:
-	    image: dockercloud/hello-world
-	  blog:
-	    image: dockercloud/hello-world
-	  lb:
-	    image: dockercloud/haproxy
-	    depends_on:
-	      - web
-	      - blog
-	    environment:
-	      - ADDITIONAL_SERVICES=project_dir:web,project_dir:blog
-	    volumes:
-	      - /var/run/docker.sock:/var/run/docker.sock
-	    ports:
-	      - 80:80
+    version: '2'
+    services:
+      web:
+        image: dockercloud/hello-world
+      blog:
+        image: dockercloud/hello-world
+      lb:
+        image: dockercloud/haproxy
+        depends_on:
+          - web
+          - blog
+        environment:
+          - ADDITIONAL_SERVICES=project_dir:web,project_dir:blog
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+        ports:
+          - 80:80
 
 ## Configuration
 
@@ -272,22 +273,22 @@ Swarm Mode only settings:
 
 Check [the HAProxy configuration manual](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html) for more information on the above.
 
-##### example of stackfile in Docker Cloud with settings in linked application:
+#### example of stackfile in Docker Cloud with settings in linked application:
 
-	web:
-	  image: 'dockercloud/hello-world:latest'
-	  target_num_containers: 2
-	  environment:
+    web:
+      image: 'dockercloud/hello-world:latest'
+      target_num_containers: 2
+      environment:
             - TCP_PORTS=443
             - EXCLUDE_PORTS=22
-	lb:
-	  image: 'dockercloud/haproxy:latest'
-	  links:
-	    - web
-	  ports:
-	    - '80:80'
-	  roles:
-	    - global
+    lb:
+      image: 'dockercloud/haproxy:latest'
+      links:
+        - web
+      ports:
+        - '80:80'
+      roles:
+        - global
 
 
 ## Virtual host and virtual path
