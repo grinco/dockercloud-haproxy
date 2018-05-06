@@ -109,32 +109,32 @@ Legacy link refers to the link created before docker 1.10, and the link created 
 
 #### example swarm service using {{.Task.Slot}}
 
-  stream:
-    image: quantumobject/docker-zoneminder:1.31.1
-    networks:
-      - net
-      - rproxy
-    volumes:
-      - cache:/var/cache/zoneminder
-      - type: tmpfs
-        target: /dev/shm
-    environment:
-      - TZ=America/Argentina/Buenos_Aires
-      - VIRTUAL_HOST=stream{{.Task.Slot}}.exa.unicen.edu.ar
-      - SERVICE_PORTS="80"
-      - ZM_SERVER_HOST=node.{{.Task.Slot}}
-      - ZM_DB_HOST=db
-    deploy:
-      mode: replicated
-      replicas: 3
-      placement:
-        constraints:
-          - node.labels.interconnect == si
-          - node.role != manager
-      restart_policy:
-        condition: any
-        max_attempts: 3
-        window: 120s
+    stream:
+      image: quantumobject/docker-zoneminder:1.31.1
+      networks:
+        - net
+        - rproxy
+      volumes:
+        - cache:/var/cache/zoneminder
+        - type: tmpfs
+          target: /dev/shm
+      environment:
+        - TZ=America/Argentina/Buenos_Aires
+        - VIRTUAL_HOST=stream{{.Task.Slot}}.exa.unicen.edu.ar
+        - SERVICE_PORTS="80"
+        - ZM_SERVER_HOST=node.{{.Task.Slot}}
+        - ZM_DB_HOST=db
+      deploy:
+        mode: replicated
+        replicas: 3
+        placement:
+          constraints:
+            - node.labels.interconnect == si
+            - node.role != manager
+        restart_policy:
+          condition: any
+          max_attempts: 3
+          window: 120s
 
 **Note**: Any link alias sharing the same prefix and followed by "-/_" with an integer is considered to be from the same service. For example: `web-1` and `web-2` belong to service `web`, `app_1` and `app_2` are from service `app`, but `app1` and `web2` are from different services.
 
@@ -154,7 +154,7 @@ Similar to using legacy links, here list some differences that you need to notic
 - As it is the case on Docker Cloud, auto reconfiguration is supported when the linked services scales or/and the linked container starts/stops.
 - The container name is maintained by docker-compose, and used for service discovery as well. Please **DO NOT** change `container_name` of the linked service in the compose file to a non-standard name. Otherwise, that service will be ignored.
 
-#### example of docker-compose.yml running on Linux or Docker for Mac (beta):
+#### example of docker-compose.yml running on Linux or Docker for Mac (beta)
 
     version: '2'
     services:
@@ -206,7 +206,7 @@ A second option is to use the `ADDITIONAL_SERVICES` variable for indentification
 - If any trouble with haproxy not updating the config, try running reload.sh or set the `DEBUG` envvar.
 - This image is also compatible with Docker Swarm, and supports the docker native `overlay` network across multi-hosts.
 
-##### example of docker-compose.yml in 'project_dir' directory running in linux:
+##### example of docker-compose.yml in 'project_dir' directory running in linux
 
     version: '2'
     services:
@@ -251,14 +251,14 @@ Settings in this part is immutable, you have to redeploy HAProxy service to make
 |EXTRA_GLOBAL_SETTINGS_FILE|File whose contents will be included in the GLOBAL section of the configuration file.|
 |EXTRA_ROUTE_SETTINGS| |a string which is append to the each backend route after the health check, can be over written in the linked services. Possible value: "send-proxy"|
 |EXTRA_SSL_CERTS| |list of extra certificate names separated by comma, eg. `CERT1, CERT2, CERT3`. You also need to specify each certificate as separate env variables like so: `CERT1="<cert-body1>"`, `CERT2="<cert-body2>"`, `CERT3="<cert-body3>"`|
-|FORCE_DEFAULT_BACKEND| True | set the default_service as a default backend. This is useful when you have more than one backend and you don't want your default_service as a default backend    
+|FORCE_DEFAULT_BACKEND| True | set the default_service as a default backend. This is useful when you have more than one backend and you don't want your default_service as a default backend
 |HEALTH_CHECK|check|set health check on each backend route, possible value: "check inter 2000 rise 2 fall 3". See:[HAProxy:check](https://cbonte.github.io/haproxy-dconv/configuration-1.5.html#5.2-check)|
 |HTTP_BASIC_AUTH| |a comma-separated list of credentials(`<user>:<pass>`) for HTTP basic auth, which applies to all the backend routes. To escape comma, use `\,`. *Attention:* DO NOT rely on this for authentication in production|
 |HTTP_BASIC_AUTH_SECURE| |a comma-separated list of credentials(`<user>:<encrypted-pass>`) for HTTP basic auth, which applies to all the backend routes. To escape comma, use `\,`. See:[HAProxy:user](https://cbonte.github.io/haproxy-dconv/1.5/configuration.html#3.4-user) *Attention:* DO NOT rely on this for authentication in production|
 |MAXCONN|4096|sets the maximum per-process number of concurrent connections.|
 |MODE|http|mode of load balancing for HAProxy. Possible values include: `http`, `tcp`, `health`|
 |MONITOR_PORT| |the port number where monitor_uri should be added to. Use together with `MONITOR_URI`. Possible value: `80`|
-|MONITOR_URI| |the exact URI which we want to intercept to return HAProxy's health status instead of forwarding the request.See: http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-monitor-uri. Possible value: `/ping`|
+|MONITOR_URI| |the exact URI which we want to intercept to return HAProxy's health status instead of forwarding the request.See: <http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-monitor-uri.> Possible value: `/ping`|
 |OPTION|redispatch|comma-separated list of HAProxy `option` entries to the `default` section.|
 |RELOAD_TIMEOUT|0| When haproxy is reconfigured, a new process starts and attaches to the TCP socket for new connections, leaving the old process to handle existing connections.  This timeout specifies how long the old process is permitted to continue running before being killed. <br/>  `-1`: Old process is killed immediately<br/>  `0`: No timeout, old process will run as long as TCP connections last.  This could potentially be quite a while as `http-keep-alives` are enabled which will keep TCP connections open.<br/>  `>0`: Timeout in secs after which the process will be killed.
 |RSYSLOG_DESTINATION|127.0.0.1|the rsyslog destination to where HAProxy logs are sent|
@@ -304,10 +304,9 @@ Swarm Mode only settings:
 |SERVICE_PORTS|envvar|comma separated ports(e.g. 80, 8080), which are the ports you would like to expose in your application service. This envvar is swarm mode only, and it is **MUST** be set in swarm mode|
 |`com.docker.dockercloud.haproxy.deactivate=<true\|false>`|label|when this label is set to true, haproxy will ignore the service. Could be useful for switching services on blue/green testing|
 
-
 Check [the HAProxy configuration manual](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html) for more information on the above.
 
-#### example of stackfile in Docker Cloud with settings in linked application:
+#### example of stackfile in Docker Cloud with settings in linked application
 
     web:
       image: 'dockercloud/hello-world:latest'
@@ -324,7 +323,6 @@ Check [the HAProxy configuration manual](http://cbonte.github.io/haproxy-dconv/c
       roles:
         - global
 
-
 ## Virtual host and virtual path
 
 Both virtual host and virtual path can be specified in environment variable `VIRTUAL_HOST`, which is a set of comma separated urls with the format of `[scheme://]domain[:port][/path]`.
@@ -336,7 +334,7 @@ Both virtual host and virtual path can be specified in environment variable `VIR
 |port|80/433|port number of the virtual host. When the scheme is `https`  `wss`, the default port will be to `443`|
 |/path||virtual path, starts with `/`. `*` can be used as the wildcard|
 
-#### examples of matching
+### examples of matching
 
 |Virtual host|Match|Not match|
 |:-----------|:----|:--------|
@@ -559,7 +557,6 @@ Docker Cloud or Docker Compose v2:
                                         |                      |---- container_b1
                                         |----- service_b ----- |---- container_b2
                                             (virtual host b)   |---- container_b3
-
 
 Legacy links:
 
