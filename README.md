@@ -1,16 +1,17 @@
 # dockercloud/haproxy
 
-## Notice: Unfortunately, this project is currently put into maintenance mode. Please do not send any PR for new features. We will still fix bugs if there is any.
+## This specific branch allow you use {{.Task.Slot}} and {{.Service.Name}} in VIRTUAL_HOST environment definition to route to different services
 
 HAProxy image that balances between linked containers and, if launched in Docker Cloud or using Docker Compose v2,
 reconfigures itself when a linked cluster member redeploys, joins or leaves.
 
 ## Version
 
-The available version can be found here: https://hub.docker.com/r/dockercloud/haproxy/tags/
- - `latest` is built against master branch
- - `staging` is built against staging branch
- - `x.x.x` is built against git tags on github
+The available version can be found here: <https://hub.docker.com/r/dockercloud/haproxy/tags/>
+
+- `latest` is built against master branch
+- `staging` is built against staging branch
+- `x.x.x` is built against git tags on github
 
 **Attention** : Please **ALWAYS** use a specific image tag that works for you. **DO NOT** use `dockercloud/haproxy:latest` in any situation other than testing purpose.
 
@@ -29,16 +30,17 @@ You can use `dockercloud/haproxy` in three different ways:
 
 2. Launch the load balancer. To do this, select "Jumpstarts", "Proxies" and select `dockercloud/haproxy`. During the "Environment variables" step of the wizard, link to the service created earlier (the name of the link is not important), and add "Full Access" API role (this will allow HAProxy to be updated dynamically by querying Docker Cloud's API).
 
-	**Note**:
-	- If you are using `docker-cloud cli`, or `stackfile`, please set `roles` to `global`
-	- Please **DO NOT** set `sequential_deployment: true` on this image.
+**Note**:
+
+- If you are using `docker-cloud cli`, or `stackfile`, please set `roles` to `global`
+- Please **DO NOT** set `sequential_deployment: true` on this image.
 
 That's it - the haproxy container will start querying Docker Cloud's API for an updated list of containers in the service and reconfigure itself automatically, including:
 
-* start/stop/terminate containers in the linked application services
-* start/stop/terminate/scale up/scale down/redeploy the linked application services
-* add new links to HAProxy
-* remove old links from HAProxy
+- start/stop/terminate containers in the linked application services
+- start/stop/terminate/scale up/scale down/redeploy the linked application services
+- add new links to HAProxy
+- remove old links from HAProxy
 
 #### example of stackfile in Docker Cloud
 
@@ -85,13 +87,13 @@ Docker 1.12 supports SwarmMode natively. `dockercloud/haproxy` will auto config 
 
 Legacy link refers to the link created before docker 1.10, and the link created in default bridge network in docker 1.10 or after.
 
-##### example of legacy links using docker cli
+#### example of legacy links using docker cli
 
     docker run -d --name web1 dockercloud/hello-world
     docker run -d --name web2 dockercloud/hello-world
     docker run -d -p 80:80 --link web1:web1 --link web2:web2 dockercloud/haproxy
 
-#### example of docker-compose.yml v1 format:
+#### example of docker-compose.yml v1 format
 
     web1:
       image: 'dockercloud/hello-world:latest'
@@ -105,7 +107,39 @@ Legacy link refers to the link created before docker 1.10, and the link created 
       ports:
         - '80:80'
 
+#### example swarm service using {{.Task.Slot}}
+
+  stream:
+    image: quantumobject/docker-zoneminder:1.31.1
+    networks:
+      - net
+      - rproxy
+    volumes:
+      - cache:/var/cache/zoneminder
+      - type: tmpfs
+        target: /dev/shm
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+      - VIRTUAL_HOST=stream{{.Task.Slot}}.exa.unicen.edu.ar
+      - SERVICE_PORTS="80"
+      - ZM_SERVER_HOST=node.{{.Task.Slot}}
+      - ZM_DB_HOST=db
+    deploy:
+      mode: replicated
+      replicas: 3
+      placement:
+        constraints:
+          - node.labels.interconnect == si
+          - node.role != manager
+      restart_policy:
+        condition: any
+        max_attempts: 3
+        window: 120s
+
 **Note**: Any link alias sharing the same prefix and followed by "-/_" with an integer is considered to be from the same service. For example: `web-1` and `web-2` belong to service `web`, `app_1` and `app_2` are from service `app`, but `app1` and `web2` are from different services.
+
+**Note**: When using {{.Task.Slot}} in VIRTUAL_HOST definition as is showed above each replica (3) will generate three diferent backend service
+definition named SERVICE_zm_stream.1, SERVICE_zm_stream.2 and SERVICE_zm_stream.3 to route to each service replica instead of using round robin.
 
 ### Running with Docker Compose v2 (Compose Mode)
 
@@ -329,6 +363,7 @@ Both virtual host and virtual path can be specified in environment variable `VIR
 |example.com:90, https://example.com|example.com:90, https://example.com||
 
 **Note**:
+
 1. The sequence of the acl rules generated based on VIRTUAL_HOST are random. In HAProxy, when an acl rule with a wide scope(e.g. *.example.com) is put before a rule with narrow scope(e.g. web.example.com), the narrow rule will never be reached. As a result, if the virtual hosts you set have overlapping scopes, you need to use `VIRTUAL_HOST_WEIGHT` to manually set the order of acl rules, namely, giving the narrow virtual host a higher weight than the wide one.
 2. Every service that has the same VIRTUAL_HOST environment variable setting will be considered and merged into one single service. It may be useful for some testing scenario.
 
@@ -350,16 +385,17 @@ To set SSL certificate, you can either:
 
 The difference between `SSL_CERT` and `DEFAULT_SSL_CERT` is that, the multiple certificates specified by `SSL_CERT` are stored in as cert1.pem, cert2.pem, ..., whereas the one specified by `DEFAULT_SSL_CERT` is always stored as cert0.pem. In that case, HAProxy will use cert0.pem as the default certificate when there is no SNI match. However, when multiple `DEFAULT_SSL_CERT` is provided, only one of the certificates can be stored as cert0.pem, others are discarded.
 
-#### PEM Files
+### PEM Files
+
 The certificate specified in `dockercloud/haproxy` or in the linked application services is a pem file, containing a private key followed by a public certificate(private key must be put before the public certificate and any extra Authority certificates, order matters). You can run the following script to generate a self-signed certificate:
 
-	openssl req -x509 -newkey rsa:2048 -keyout key.pem -out ca.pem -days 1080 -nodes -subj '/CN=*/O=My Company Name LTD./C=US'
-	cp key.pem cert.pem
-	cat ca.pem >> cert.pem
+    openssl req -x509 -newkey rsa:2048 -keyout key.pem -out ca.pem -days 1080 -nodes -subj '/CN=*/O=My Company Name LTD./C=US'
+    cp key.pem cert.pem
+    cat ca.pem >> cert.pem
 
 Once you have the pem file, you can run this command to convert the file correctly to one line:
 
-	awk 1 ORS='\\n' cert.pem
+    awk 1 ORS='\\n' cert.pem
 
 Copy the output and set it as the value of `SSL_CERT` or `DEFAULT_SSL_CERT`.
 
@@ -372,16 +408,15 @@ There are three method to setup affinity and sticky session:
 
 Check [HAProxy:cookie](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-cookie) for more information.
 
-
 ## TCP load balancing
 
 By default, `dockercloud/haproxy` runs in `http` mode. If you want a linked service to run in a `tcp` mode, you can specify the environment variable `TCP_PORTS`, which is a comma separated ports(e.g. 9000, 9001).
 
 For example, if you run:
 
-	docker --name app-1 --expose 9000 --expose 9001 -e TCP_PORTS="9000, 9001" your_app
-	docker --name app-2 --expose 9000 --expose 9001 -e TCP_PORTS="9000, 9001" your_app
-	docker run --link app-1:app-1 --link app-2:app-2 -p 9000:9000, 9001:9001 dockercloud/haproxy
+    docker --name app-1 --expose 9000 --expose 9001 -e TCP_PORTS="9000, 9001" your_app
+    docker --name app-2 --expose 9000 --expose 9001 -e TCP_PORTS="9000, 9001" your_app
+    docker run --link app-1:app-1 --link app-2:app-2 -p 9000:9000, 9001:9001 dockercloud/haproxy
 
 Then, haproxy balances the load between `app-1` and `app-2` in both port `9000` and `9001` respectively.
 
@@ -389,9 +424,9 @@ Moreover, If you have more exposed ports than `TCP_PORTS`, the rest of the ports
 
 For example, if you run:
 
-	docker --name app-1 --expose 80 --expose 22 -e TCP_PORTS=22 your_app
-	docker --name app-2 --expose 80 --expose 22 -e TCP_PORTS=22 your_app
-	docker run --link app-1:app-2 --link app-2:app-2 -p 80:80 -p 22:22 dockercloud/haproxy
+    docker --name app-1 --expose 80 --expose 22 -e TCP_PORTS=22 your_app
+    docker --name app-2 --expose 80 --expose 22 -e TCP_PORTS=22 your_app
+    docker run --link app-1:app-2 --link app-2:app-2 -p 80:80 -p 22:22 dockercloud/haproxy
 
 Then, haproxy balances in `http` mode at port `80` and balances in `tcp` on port at port `22`.
 
@@ -405,17 +440,15 @@ Note:
 2. Be careful that, the load balancing on `tcp` port is applied to all the services. If you link two(or more) different services using the same `TCP_PORTS`, `dockercloud/haproxy` considers them coming from the same service.
 
 ## WebSocket support
------------------
 
 There are two ways to enable the support of websocket:
 
 1. As websocket starts using HTTP protocol, you can use virtual host to specify the scheme using `ws` or `wss`. For example, `-e VIRTUAL_HOST="ws://ws.example.com, wss://wss.example.com"
 2. Websocket itself is a TCP connection, you can also try the TCP load balancing mentioned in the previous section.
 
-
 ## Use case scenarios
 
-#### My webapp container exposes port 8080(or any other port), and I want the proxy to listen in port 80
+### My webapp container exposes port 8080(or any other port), and I want the proxy to listen in port 80
 
 Use the following:
 
@@ -495,17 +528,17 @@ When you access `http://www.webapp1.com`, it will show the service running in co
 
 #### I want all the requests to path `/path` point to my service
 
-	docker run -d -e VIRTUAL_HOST="*/path, */path/*" --name webapp dockercloud/hello-world
+  docker run -d -e VIRTUAL_HOST="*/path, */path/*" --name webapp dockercloud/hello-world
     docker run -d --link webapp:webapp -p 80:80 dockercloud/haproxy
 
 #### I want all the static html request point to my service
 
-	docker run -d -e VIRTUAL_HOST="*/*.htm, */*.html" --name webapp dockercloud/hello-world
+  docker run -d -e VIRTUAL_HOST="*/*.htm, */*.html" --name webapp dockercloud/hello-world
     docker run -d --link webapp:webapp -p 80:80 dockercloud/haproxy
 
 #### I want to see stats of HAProxy
 
-	docker run -d --link webapp:webapp -e STATS_AUTH="auth:auth" -e STATS_PORT=1936 -p 80:80 -p 1936:1936 dockercloud/haproxy
+  docker run -d --link webapp:webapp -e STATS_AUTH="auth:auth" -e STATS_PORT=1936 -p 80:80 -p 1936:1936 dockercloud/haproxy
 
 #### I want to send all my logs to papertrailapp
 
@@ -516,7 +549,6 @@ Replace `<subdomain>` and `<port>` with your the values matching your papertrail
     docker run -it --env RSYSLOG_DESTINATION='<subdomain>.papertrailapp.com:<port>' -p 80:80 --link web1:web1 --link web2:web2 dockercloud/haproxy
 
 ## Topologies using virtual hosts
-
 
 Docker Cloud or Docker Compose v2:
 
@@ -543,5 +575,5 @@ Legacy links:
 
 In most cases, `dockercloud/haproxy` will configure itself automatically when the linked services change, you don't need to reload it manually. But for some reason, if you have to do so, here is how:
 
-* `docker exec <haproxy_id> /reload.sh`, if you are on the node where dockercloud/haproxy deploys
-* `docker-cloud exec <haproxy_uuid> /reload.sh`, if you use docker-cloud cli
+- `docker exec <haproxy_id> /reload.sh`, if you are on the node where dockercloud/haproxy deploys
+- `docker-cloud exec <haproxy_uuid> /reload.sh`, if you use docker-cloud cli
