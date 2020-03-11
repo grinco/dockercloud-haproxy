@@ -1,6 +1,6 @@
 # dockercloud/haproxy
 
-## This specific branch allow you use {{.Task.Slot}} and {{.Service.Name}} in VIRTUAL_HOST environment definition to route to different services
+## This specific branch allow you use {{.Task.Slot}} and {{.Service.Name}} in VIRTUAL_HOST environment definition to route to different services, also RSYSLOG_DESTINATION with multiples IP/servers separated by comma
 
 HAProxy image that balances between linked containers and, if launched in Docker Cloud or using Docker Compose v2,
 reconfigures itself when a linked cluster member redeploys, joins or leaves.
@@ -107,8 +107,15 @@ Legacy link refers to the link created before docker 1.10, and the link created 
       ports:
         - '80:80'
 
-#### example swarm service using {{.Task.Slot}}
+#### example swarm service using {{.Task.Slot}} and multiple RSYSLOG_DESTINATION syntax
 
+    lb:
+      image: 'dockercloud/haproxy:latest'
+      ports:
+        - '80:80'
+      environment:
+        - TZ=America/Argentina/Buenos_Aires
+        - RSYSLOG_DESTINATION=remoteserver1,remoteserver2,127.0.0.1
     stream:
       image: quantumobject/docker-zoneminder:1.31.1
       networks:
@@ -140,6 +147,8 @@ Legacy link refers to the link created before docker 1.10, and the link created 
 
 **Note**: When using {{.Task.Slot}} in VIRTUAL_HOST definition as is showed above each replica (3) will generate three diferent backend service
 definition named SERVICE_zm_stream.1, SERVICE_zm_stream.2 and SERVICE_zm_stream.3 to route to each service replica instead of using round robin.
+
+**Note**: When using RSYSLOG_DESTINATION with multiple servers destinations be sure that the value of environment variable not include ", must be as showed above.
 
 ### Running with Docker Compose v2 (Compose Mode)
 
@@ -261,7 +270,7 @@ Settings in this part is immutable, you have to redeploy HAProxy service to make
 |MONITOR_URI| |the exact URI which we want to intercept to return HAProxy's health status instead of forwarding the request.See: <http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#4-monitor-uri.> Possible value: `/ping`|
 |OPTION|redispatch|comma-separated list of HAProxy `option` entries to the `default` section.|
 |RELOAD_TIMEOUT|0| When haproxy is reconfigured, a new process starts and attaches to the TCP socket for new connections, leaving the old process to handle existing connections.  This timeout specifies how long the old process is permitted to continue running before being killed. <br/>  `-1`: Old process is killed immediately<br/>  `0`: No timeout, old process will run as long as TCP connections last.  This could potentially be quite a while as `http-keep-alives` are enabled which will keep TCP connections open.<br/>  `>0`: Timeout in secs after which the process will be killed.
-|RSYSLOG_DESTINATION|127.0.0.1|the rsyslog destination to where HAProxy logs are sent|
+|RSYSLOG_DESTINATION|127.0.0.1|the rsyslog destination to where HAProxy logs are sent separated by comma|
 |SKIP_FORWARDED_PROTO||If set to any value, HAProxy will not add an X-Forwarded- headers. This can be used when combining HAProxy with another load balancer|
 |SSL_BIND_CIPHERS| |explicitly set which SSL ciphers will be used for the SSL server. This sets the HAProxy `ssl-default-bind-ciphers` configuration setting.|
 |SSL_BIND_OPTIONS|no-sslv3|explicitly set which SSL bind options will be used for the SSL server. This sets the HAProxy `ssl-default-bind-options` configuration setting. The default will allow only TLSv1.0+ to be used on the SSL server.|

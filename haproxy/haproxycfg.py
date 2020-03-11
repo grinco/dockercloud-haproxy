@@ -236,15 +236,18 @@ class Haproxy(object):
     def _config_global_section():
         cfg = OrderedDict()
 
-        statements = ["log %s local0" % RSYSLOG_DESTINATION,
-                      "log %s local1 notice" % RSYSLOG_DESTINATION,
-                      "log-send-hostname",
+        statements = ["log-send-hostname",
                       "maxconn %s" % MAXCONN,
                       "pidfile /var/run/haproxy.pid",
                       "user %s" % HAPROXY_USER,
                       "group %s" % HAPROXY_GROUP,
                       "daemon",
                       "stats socket /var/run/haproxy.stats level admin"]
+                      
+        data = RSYSLOG_DESTINATION.split(",")
+        for temp in data:
+            statements.append("log %s local0" % temp)
+            statements.append("log %s local1 notice" % temp)
 
         if NBPROC > 1:
             statements.append("nbproc %s" % NBPROC)
