@@ -244,7 +244,7 @@ class Haproxy(object):
                       "daemon",
                       "stats socket /var/run/haproxy.stats level admin"]
                       
-        data = RSYSLOG_DESTINATION.split(",")
+        data = RSYSLOG_DESTINATION.replace("\"","").split(",")
         for temp in data:
             statements.append("log %s local0" % temp)
             statements.append("log %s local1 notice" % temp)
