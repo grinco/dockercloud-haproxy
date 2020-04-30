@@ -1,15 +1,18 @@
-FROM alpine:3.6
-MAINTAINER Feng Honglin <hfeng@tutum.co>
+FROM ubuntu:18.04
+LABEL maintainer="marcelo.ochoa@gmail.com"
 
 COPY . /haproxy-src
+ENV DEBIAN_FRONTEND noninteractive
 
-RUN apk update && \
-    apk --no-cache add tini haproxy py-pip build-base python-dev ca-certificates && \
+RUN apt update && \
+    apt install -y haproxy python-pip && \
     cp /haproxy-src/reload.sh /reload.sh && \
     cd /haproxy-src && \
     pip install -r requirements.txt && \
     pip install . && \
-    apk del build-base python-dev && \
+    apt purge -y build-essential python-all-dev python-pip linux-libc-dev libgcc-7-dev && \
+    apt autoremove -y && apt install -y python && \
+    apt clean && rm -rf /var/lib/apt/lists/* && \
     rm -rf "/tmp/*" "/root/.cache" `find / -regex '.*\.py[co]'`
 
 ENV RSYSLOG_DESTINATION=127.0.0.1 \
@@ -26,5 +29,5 @@ ENV RSYSLOG_DESTINATION=127.0.0.1 \
     NBPROC=1
 
 EXPOSE 80 443 1936
-ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["dockercloud-haproxy"]
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD ["/usr/local/bin/dockercloud-haproxy"]

@@ -1,13 +1,13 @@
 # dockercloud/haproxy
 
-## This specific branch allow you use {{.Task.Slot}} and {{.Service.Name}} in VIRTUAL_HOST environment definition to route to different services, also RSYSLOG_DESTINATION with multiples IP/servers separated by comma
+## This specific branch allow you use {{.Task.Slot}} and {{.Service.Name}} in VIRTUAL_HOST environment definition to route to different services, also RSYSLOG_DESTINATION with multiples IP/servers separated by comma finally was updated to use ubuntu:18.04 base image and HA-Proxy version 1.8.8-1ubuntu0.10 2020/04/03
 
 HAProxy image that balances between linked containers and, if launched in Docker Cloud or using Docker Compose v2,
 reconfigures itself when a linked cluster member redeploys, joins or leaves.
 
 ## Version
 
-The available version can be found here: <https://hub.docker.com/r/dockercloud/haproxy/tags/>
+This project was tested against ubuntu:18.04 base image and HAProxy 1.8.8
 
 - `latest` is built against master branch
 - `staging` is built against staging branch
@@ -48,7 +48,7 @@ That's it - the haproxy container will start querying Docker Cloud's API for an 
       image: 'dockercloud/hello-world:latest'
       target_num_containers: 2
     lb:
-      image: 'dockercloud/haproxy:latest'
+      image: 'dockercloud/haproxy:1.8.8'
       links:
         - web
       ports:
@@ -100,7 +100,7 @@ Legacy link refers to the link created before docker 1.10, and the link created 
     web2:
       image: 'dockercloud/hello-world:latest'
     lb:
-      image: 'dockercloud/haproxy:latest'
+      image: 'dockercloud/haproxy:1.8.8'
       links:
         - web1
         - web2
@@ -110,7 +110,7 @@ Legacy link refers to the link created before docker 1.10, and the link created 
 #### example swarm service using {{.Task.Slot}} and multiple RSYSLOG_DESTINATION syntax
 
     lb:
-      image: 'dockercloud/haproxy:latest'
+      image: 'dockercloud/haproxy:1.8.8'
       ports:
         - '80:80'
       environment:
@@ -131,6 +131,7 @@ Legacy link refers to the link created before docker 1.10, and the link created 
         - SERVICE_PORTS="80"
         - ZM_SERVER_HOST=node.{{.Task.Slot}}
         - ZM_DB_HOST=db
+        - EXTRA_GLOBAL_SETTINGS=tune.ssl.default-dh-param 2048
       deploy:
         mode: replicated
         replicas: 3
@@ -149,6 +150,8 @@ Legacy link refers to the link created before docker 1.10, and the link created 
 definition named SERVICE_zm_stream.1, SERVICE_zm_stream.2 and SERVICE_zm_stream.3 to route to each service replica instead of using round robin.
 
 **Note**: When using RSYSLOG_DESTINATION with multiple servers destinations be sure that the value of environment variable not include ", must be as showed above.
+
+**Note**: When using SSL to avoid "[WARNING] 116/063013 (179) : Setting tune.ssl.default-dh-param to 1024 by default, if your workload permits it you should set it to at least 2048. Please set a value >= 1024 to make this warning disappear." add **EXTRA_GLOBAL_SETTINGS=tune.ssl.default-dh-param 2048** as environment variable
 
 ### Running with Docker Compose v2 (Compose Mode)
 
@@ -324,7 +327,7 @@ Check [the HAProxy configuration manual](http://cbonte.github.io/haproxy-dconv/c
             - TCP_PORTS=443
             - EXCLUDE_PORTS=22
     lb:
-      image: 'dockercloud/haproxy:latest'
+      image: 'dockercloud/haproxy:1.8.8'
       links:
         - web
       ports:
