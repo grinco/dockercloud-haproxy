@@ -274,15 +274,14 @@ class Haproxy(object):
     def _config_stats_section():
         cfg = OrderedDict()
         bind = " ".join([STATS_PORT, EXTRA_BIND_SETTINGS.get(STATS_PORT, "")])
-        cfg["listen stats"] = ["bind :%s" % bind.strip(),
-                               "mode http",
+        cfg["frontend stats"] = ["bind :%s" % bind.strip(),
+                               "option http-use-htx",
+                               "http-request use-service prometheus-exporter if { path /metrics }",
                                "stats enable",
-                               "timeout connect 10s",
-                               "timeout client 1m",
-                               "timeout server 1m",
+                               "stats uri /stats",
+                               "stats refresh 10s",
                                "stats hide-version",
                                "stats realm Haproxy\ Statistics",
-                               "stats uri /",
                                "stats auth %s" % STATS_AUTH]
         return cfg
 

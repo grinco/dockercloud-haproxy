@@ -1,13 +1,13 @@
 # dockercloud/haproxy
 
-## This specific branch allow you use {{.Task.Slot}} and {{.Service.Name}} in VIRTUAL_HOST environment definition to route to different services, also RSYSLOG_DESTINATION with multiples IP/servers separated by comma finally was updated to use ubuntu:18.04 base image and HA-Proxy version 1.8.8-1ubuntu0.10 2020/04/03
+## This specific branch allow you use {{.Task.Slot}} and {{.Service.Name}} in VIRTUAL_HOST environment definition to route to different services, also RSYSLOG_DESTINATION with multiples IP/servers separated by comma finally was updated to use ubuntu:18.04 base image and HA-Proxy version 2.0.13-2ubuntu0.1
 
 HAProxy image that balances between linked containers and, if launched in Docker Cloud or using Docker Compose v2,
 reconfigures itself when a linked cluster member redeploys, joins or leaves.
 
 ## Version
 
-This project was tested against ubuntu:18.04 base image and HAProxy 1.8.8
+This project was tested against ubuntu:20.04 base image and HAProxy 2.0.13
 
 - `latest` is built against master branch
 - `staging` is built against staging branch
@@ -48,7 +48,7 @@ That's it - the haproxy container will start querying Docker Cloud's API for an 
       image: 'dockercloud/hello-world:latest'
       target_num_containers: 2
     lb:
-      image: 'dockercloud/haproxy:1.8.8'
+      image: 'dockercloud/haproxy:2.0.13'
       links:
         - web
       ports:
@@ -79,7 +79,7 @@ Docker 1.12 supports SwarmMode natively. `dockercloud/haproxy` will auto config 
 
     docker network create -d overlay proxy
     docker service create --name haproxy --network proxy --mount target=/var/run/docker.sock,source=/var/run/docker.sock,type=bind -p 80:80 --constraint "node.role == manager" dockercloud/haproxy
-    docker service create -e SERVICE_PORTS="80" --name app --network proxy --constraint "node.role != manager" dockercloud/hello-world
+    docker service create -e SERVICE_PORTS="80" --name app --network proxy dockercloud/hello-world
     docker service scale app=2
     docker service update --env-add VIRTUAL_HOST=web.org app
 
@@ -100,7 +100,7 @@ Legacy link refers to the link created before docker 1.10, and the link created 
     web2:
       image: 'dockercloud/hello-world:latest'
     lb:
-      image: 'dockercloud/haproxy:1.8.8'
+      image: 'dockercloud/haproxy:2.0.13'
       links:
         - web1
         - web2
@@ -110,7 +110,7 @@ Legacy link refers to the link created before docker 1.10, and the link created 
 #### example swarm service using {{.Task.Slot}} and multiple RSYSLOG_DESTINATION syntax
 
     lb:
-      image: 'dockercloud/haproxy:1.8.8'
+      image: 'dockercloud/haproxy:2.0.13'
       ports:
         - '80:80'
       environment:
@@ -327,7 +327,7 @@ Check [the HAProxy configuration manual](http://cbonte.github.io/haproxy-dconv/c
             - TCP_PORTS=443
             - EXCLUDE_PORTS=22
     lb:
-      image: 'dockercloud/haproxy:1.8.8'
+      image: 'dockercloud/haproxy:2.0.13'
       links:
         - web
       ports:

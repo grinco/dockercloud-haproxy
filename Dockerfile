@@ -1,17 +1,18 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 LABEL maintainer="marcelo.ochoa@gmail.com"
 
 COPY . /haproxy-src
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt update && \
-    apt install -y haproxy python-pip && \
+    apt install -y haproxy python2 curl && \
+    curl https://bootstrap.pypa.io/2.7/get-pip.py --output get-pip.py && python2 get-pip.py && \
     cp /haproxy-src/reload.sh /reload.sh && \
     cd /haproxy-src && \
     pip install -r requirements.txt && \
     pip install . && \
-    apt purge -y build-essential python-all-dev python-pip linux-libc-dev libgcc-7-dev && \
-    apt autoremove -y && apt install -y python && \
+    apt purge -y build-essential python-all-dev linux-libc-dev libgcc-7-dev && \
+    apt autoremove -y && apt install -y python2 && \
     apt clean && rm -rf /var/lib/apt/lists/* && \
     rm -rf "/tmp/*" "/root/.cache" `find / -regex '.*\.py[co]'`
 
