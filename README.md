@@ -1,6 +1,6 @@
 # dockercloud/haproxy
 
-## This specific branch allow you use {{.Task.Slot}} and {{.Service.Name}} in VIRTUAL_HOST environment definition to route to different services, also RSYSLOG_DESTINATION with multiples IP/servers separated by comma finally was updated to use ubuntu:18.04 base image and HA-Proxy version 2.0.13-2ubuntu0.1
+## This specific branch allow you use {{.Task.Slot}} and {{.Service.Name}} in VIRTUAL_HOST environment definition to route to different services, also RSYSLOG_DESTINATION with multiples IP/servers separated by comma finally was updated to use ubuntu:20.04 base image and HA-Proxy version 2.0.13-2ubuntu0.1
 
 HAProxy image that balances between linked containers and, if launched in Docker Cloud or using Docker Compose v2,
 reconfigures itself when a linked cluster member redeploys, joins or leaves.
