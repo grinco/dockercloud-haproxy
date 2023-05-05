@@ -1,13 +1,18 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 LABEL maintainer="marcelo.ochoa@gmail.com"
 
-COPY . /haproxy-src
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt update && \
-    apt install -y haproxy python2 curl && \
-    curl https://bootstrap.pypa.io/2.7/get-pip.py --output get-pip.py && python2 get-pip.py && \
+    apt install -y haproxy python2 curl rsyslog && \
+    sed -i 's/#module(load="imudp")/module(load="imudp")/' /etc/rsyslog.conf && \
+    sed -i 's/#input(type="imudp" port="514")/input(type="imudp" port="514")/' /etc/rsyslog.conf && \
+    touch /var/log/haproxy.log && chown syslog:adm /var/log/haproxy.log
+
+COPY . /haproxy-src
+RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py && python2 get-pip.py && \
     cp /haproxy-src/reload.sh /reload.sh && \
+    cp /haproxy-src/docker-entrypoint.sh /docker-entrypoint.sh && \
     cd /haproxy-src && \
     pip install -r requirements.txt && \
     pip install . && \
@@ -31,4 +36,4 @@ ENV RSYSLOG_DESTINATION=127.0.0.1 \
 
 EXPOSE 80 443 1936
 ENTRYPOINT ["/bin/sh", "-c"]
-CMD ["/usr/local/bin/dockercloud-haproxy"]
+CMD ["/docker-entrypoint.sh"]

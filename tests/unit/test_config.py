@@ -20,18 +20,18 @@ class ParseExtraFrontendSettings(unittest.TestCase):
         self.assertEqual({}, parse_extra_frontend_settings(""))
         self.assertEqual({}, parse_extra_frontend_settings({}))
         tf = tempfile.NamedTemporaryFile();
-        tf.write("reqadd file_header value99")
+        tf.write("http-request add-header file_header value99")
         tf.flush()
 
-        envvars = {"EXTRA_FRONTEND_SETTINGS_443": " reqadd header1 value1, reqadd header2 va\,lue2,"
-                                                  "  reqadd header3 value3 ",
+        envvars = {"EXTRA_FRONTEND_SETTINGS_443": " http-request add-header header1 value1, http-request add-header header2 va\,lue2,"
+                                                  "  http-request add-header header3 value3 ",
                    "EXTRA_FRONTEND_SETTINGS_FILE_443": tf.name,
-                   "EXTRA_FRONTEND_SETTINGS_80": "reqadd header4",
+                   "EXTRA_FRONTEND_SETTINGS_80": "http-request add-header header4",
                    "EXTRA_FRONTEND_SETTINGS_8080": "",
-                   "EXTRA_FRONTEND_SETTINGS_ABC": "reqadd header5",
-                   "EXTRA_FRONTEND_SETTINGS_": "reqadd header6"}
-        settings = {"443": ["reqadd file_header value99", "reqadd header1 value1", "reqadd header2 va,lue2",
-                            "reqadd header3 value3"],
-                    "80": ["reqadd header4"],
+                   "EXTRA_FRONTEND_SETTINGS_ABC": "http-request add-header header5",
+                   "EXTRA_FRONTEND_SETTINGS_": "http-request add-header header6"}
+        settings = {"443": ["http-request add-header file_header value99", "http-request add-header header1 value1", "http-request add-header header2 va,lue2",
+                            "http-request add-header header3 value3"],
+                    "80": ["http-request add-header header4"],
                     "8080": [""]}
         self.assertEqual(settings, parse_extra_frontend_settings(envvars))

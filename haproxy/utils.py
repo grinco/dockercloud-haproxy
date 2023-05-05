@@ -42,6 +42,7 @@ def save_to_file(name, content):
     try:
         with open(name, 'w') as f:
             f.write(content)
+            f.write("\n")
             return True
     except Exception as e:
         logger.error("Cannot write to file(%s): %s" % (name, e))
