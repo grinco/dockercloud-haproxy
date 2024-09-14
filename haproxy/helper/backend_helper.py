@@ -32,11 +32,12 @@ def get_backend_routes(route_setting, is_sticky, routes, routes_added, service_a
                 if route in routes_added:
                     continue
                 address = "%s:%s" % (route["addr"], route["port"])
+                name = "%s_%s" % (route["container_name"], route["port"])
                 if address not in addresses_added:
                     addresses_added.append(address)
-                    backend_route = ["server %s %s" % (route["container_name"], address)]
+                    backend_route = ["server %s %s" % (name, address)]
                     if is_sticky:
-                        backend_route.append("cookie %s" % route["container_name"])
+                        backend_route.append("cookie %s" % name)
 
                     if route_setting:
                         backend_route.append(route_setting)
